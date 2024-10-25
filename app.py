@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask import Flask, render_template, request
 import joblib
 from preprocessing import lemmatize_text
 
@@ -9,23 +10,30 @@ vectorizer = joblib.load('tfidf_vectorizer.pkl')
 # Initialize Flask app
 app = Flask(__name__)
 
-# Define a default route
 @app.route("/", methods=["GET"])
 def home():
-    return "Welcome to the Sentiment Analysis API!"
+    return render_template('index.html')
 
-# Define a route for sentiment prediction
-@app.route("/predict", methods=["POST"])
+@app.route('/predict', methods=['POST'])
 def predict():
-    data = request.json  # Assumes JSON input with a 'text' field
-    text = data.get("text", "")
-    if text:
-        text_tfidf = vectorizer.transform([text])
-        prediction = model.predict(text_tfidf)[0]
-        sentiment = "positive" if prediction == 1 else "negative"
-        return jsonify({"text": text, "sentiment": sentiment})
-    else:
-        return jsonify({"error": "No text provided"}), 400
+    # Get user input from the form
+    input_text = request.form['review_text']
+    
+    # Transform input text using the vectorizer
+    input_vector = vectorizer.transform([input_text])
+    
+    # Predict sentiment
+    prediction = model.predict(input_vector)[0]
+    
+    # Convert prediction to positive/negative text
+    sentiment = "Positive" if prediction == 1 else "Negative"
+    
+    return render_template('index.html', prediction=sentiment)
+
+
+# Run the app
+if __name__ == "__main__":
+    app.run(debug=True)
 
 # Run the app
 if __name__ == "__main__":
